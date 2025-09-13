@@ -1,0 +1,21 @@
+# Conda environment
+/garden
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+
+# File di configurazione sensibili
+.env
+
+# Dati e modelli pesanti
+data/
+models/
+*.h5
+*.pt
+*.pkl
