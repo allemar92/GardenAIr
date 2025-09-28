@@ -10,13 +10,15 @@ class Agent:
         self.model = model
         self.role = role
 
-    def ask(self, prompt: str, client=None):
+    def ask(self, prompt: str, client: Optional[object] = None, model: Optional[str] = None) -> str:
         if client is None:
             return "Error: no client provided, use ask()."
         
+        model_to_use = model or self.model
+
         try:
             response = client.chat.completions.create(
-                model=self.model,
+                model=model_to_use,
                 messages=[
                     {"role": "system", "content": f"You are {self.name}, {self.role}."},
                     {"role": "user", "content": prompt}
