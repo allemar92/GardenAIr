@@ -1,0 +1,16 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Installa LiteLLM
+RUN pip install --no-cache-dir "litellm[proxy]"
+
+# Espone la porta su cui LiteLLM girerà
+EXPOSE 4000
+
+# Variabile d'ambiente (opzionale: puoi passare le API key da docker-compose.yml)
+ENV OPENAI_API_KEY=""
+
+# Avvia LiteLLM come server proxy
+# Esempio: espone un modello OpenAI GPT-3.5
+CMD ["litellm", "--model", "gpt-3.5-turbo", "--host", "0.0.0.0", "--port", "4000"]
