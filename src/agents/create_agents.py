@@ -1,12 +1,7 @@
-from clients.litellm_client import LiteLLMClient
+
 from agents.agent import Agent
 
-def get_client(model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 1024):
-    """
-    Returns a LiteLLM client with chosen parameters.
-    """
-    lite_client = LiteLLMClient(model=model, temperature=temperature, max_tokens=max_tokens)
-    return lite_client.get_client()
+
 
 
 def create_plant_selector():
@@ -16,7 +11,8 @@ def create_plant_selector():
     return Agent(
         name="PlantSelector",
         model="gpt-4o-mini",
-        role="a helpful gardening assistant specialized in synergistic gardening."
+        role="a helpful gardening assistant specialized in synergistic gardening.",
+        max_tokens=800
     )
 
 def create_synergy_agent():
@@ -26,7 +22,8 @@ def create_synergy_agent():
     return Agent(
         name="SynergyAgent",
         model="gpt-4o-mini",
-        role="a helpful gardening assistant specialized in synergistic gardening."
+        role="a helpful gardening assistant specialized in synergistic gardening.",
+        max_tokens=1500
     )
 
 def create_garden_agent():
@@ -36,5 +33,17 @@ def create_garden_agent():
     return Agent(
         name="GardenAgent",
         model="gpt-4o-mini",
-        role="a helpful gardening assistant specialized in synergistic gardening."
+        role="a helpful gardening assistant specialized in synergistic gardening.",
+        max_tokens=3000
+    )
+
+def create_summarize_map_agent():
+    """
+    Returns the summarize map agent
+    """
+    return Agent(
+        name="SummarizeMapAgent",
+        model="gpt-4o-mini",
+        role="a helpful gardening assistant specialized in synergistic gardening.",
+        max_tokens=1000
     )
