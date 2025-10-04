@@ -15,7 +15,7 @@ from images.openai_image_client import OpenAIImageClient
 
 
 
-def run_garden_pipeline(location: str, preferences: list[str], num_people: int):
+def run_garden_pipeline(location: str, preferences: list[str], num_people: int, client):
     """
     Runs the gardening pipeline
     """
@@ -26,8 +26,8 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int):
             I want to make a synergistic garden. 
             Add to my preference the most useful and productive garden plants that thrive in my climate zone.
             Suggest a list of plants that do well in my area and that have nice synergies.
-            Avoid any tips or advice, generate only a list of plants. Avoid any explanations or introduction."""
-                                    )
+            Avoid any tips or advice, generate only a list of plants. Avoid any explanations or introduction.""",
+                                    client=client)
     if not plant_list or plant_list.startswith("Error:"):
         raise RuntimeError("Plant selector failed to generate output")
 
@@ -39,7 +39,8 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int):
     plants_and_synergy = synergy_agent.ask(
     f"""Based on this list of plant: {plant_list}, provide any additional synergetic plant that thrives in this location: {location}
         Return the provided list with the addition of the new plants.
-        Avoid any tips or advice, generate only a list of plants. Avoid any explanations or introduction."""
+        Avoid any tips or advice, generate only a list of plants. Avoid any explanations or introduction.""",
+                                    client=client
                         )
     
     if not plants_and_synergy or plants_and_synergy.startswith("Error:"):
@@ -52,7 +53,8 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int):
     gardening_instruction =garden_agent.ask(
         f"""Based on this list of plant: {plants_and_synergy}, provide instructions to set the garden to take full advantage of the synergies between plants
             Provide precise instructions on which plants should be planted close to each other and on the synergies to take advantage of.
-            Give the right number of plants for each species to feed a family of {num_people}"""
+            Give the right number of plants for each species to feed a family of {num_people}""",
+                                    client=client
                     )
     if not gardening_instruction or gardening_instruction.startswith("Error:"):
         raise RuntimeError("Plant selector failed to generate output")
@@ -74,7 +76,8 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int):
             - Use a simple format like: 
             Bed 1: carrots next to onions and lettuce.
             Bed 2: tomatoes next to basil and marigold.
-            """
+            """,
+                                    client=client
             )
     if not summarized_map or summarized_map.startswith("Error:"):
         raise RuntimeError("Plant selector failed to generate output")
@@ -92,6 +95,8 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int):
             - Do not add text, labels, or explanations.
             - Keep the style clean, simple, and schematic.
         """, n=1, size="1024x1024")
+
+        print("DEBUG - garden_image response:", garden_image)
 
         if not garden_image or not garden_image.startswith("http"):
             raise ValueError("Invalid image URL returned.")
