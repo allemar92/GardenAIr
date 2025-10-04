@@ -1,7 +1,7 @@
 import os
-from base_client import BaseClient
+from .base_client import BaseClient
 from dotenv import load_dotenv
-from litellm import LLMClient  
+#from litellm import LLMClient  
 
 load_dotenv()
 
@@ -24,7 +24,7 @@ class LiteLLMClient(BaseClient):
         final_temp = temperature if temperature is not None else self.temperature
         final_max_tokens = max_tokens if max_tokens is not None else self.max_tokens
 
-        return LLMClient(
+        return LiteLLMClient(
             model=final_model,
             temperature=final_temp,
             max_tokens=final_max_tokens
