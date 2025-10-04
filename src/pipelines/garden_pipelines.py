@@ -5,6 +5,15 @@ from agents.create_agents import(
     create_summarize_map_agent
 )
 from images.openai_image_client import OpenAIImageClient
+# import logging
+# logger = logging.getLogger(__name__)
+# logger.setLevel(logging.INFO)
+
+# #TODO: add logging
+# logger.info("🌱 Plant list generated: %s", plant_list)
+# logger.error("❌ Failed to generate garden image: %s", e)
+
+
 
 def run_garden_pipeline(location: str, preferences: list[str], num_people: int):
     """
