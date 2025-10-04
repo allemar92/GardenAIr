@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
-from base_image_client import BaseImageClient
+from .base_image_client import BaseImageClient
 
 load_dotenv()
 
