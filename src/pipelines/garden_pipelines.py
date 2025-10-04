@@ -81,6 +81,7 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int, 
             )
     if not summarized_map or summarized_map.startswith("Error:"):
         raise RuntimeError("Plant selector failed to generate output")
+    print(f"🌱 Gardening's layout summarized: {summarized_map}")
     #generate an image of the garden
     try:
         image_client = OpenAIImageClient()
@@ -94,7 +95,7 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int, 
             - Draw only plants, one per species.
             - Do not add text, labels, or explanations.
             - Keep the style clean, simple, and schematic.
-        """, n=1, size="1024x1024")
+        """,  size="1024x1024")#n=1,
 
         print("DEBUG - garden_image response:", garden_image)
 
