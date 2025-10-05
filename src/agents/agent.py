@@ -1,4 +1,6 @@
 from typing import Optional
+from typing import Union
+from pydantic import BaseModel
 from clients.litellm_client import LiteLLMClient
 
 def get_client(model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 1024):
@@ -20,11 +22,14 @@ class Agent:
         self.role = role
         self.client = get_client(model=self.model, temperature=temperature, max_tokens=max_tokens)
 
-    def ask(self, prompt: str, client: Optional[object] = None, model: Optional[str] = None) -> str:
+    def ask(self, prompt: Union[str, BaseModel], client: Optional[object] = None, model: Optional[str] = None) -> str:
         if client is None:
             return "Error: no client provided, use ask()."
         
         model_to_use = model or self.model
+
+        if isinstance(prompt, BaseModel):
+                    prompt = prompt.model_dump_json(indent=2)
 
         try:
             response = client.chat.completions.create(
