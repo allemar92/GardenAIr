@@ -1,0 +1,28 @@
+User information:
+- Location: {{ location }}
+- Preferences: {{ preferences | join(", ") }}
+- Number of people to feed: {{ num_people }}
+
+Please suggest a list of plant species that:
+- Align with the user’s preferences,
+- Thrive in their climate zone,
+- Exhibit synergistic compatibility with each other.
+
+
+IMPORTANT: You must respond with ONLY valid JSON in this exact format:
+{
+  "plant_list": ["Plant1", "Plant2", "Plant3", "Plant4"]
+}
+
+
+Output:
+-Return ONLY a valid JSON array with no markdown formatting, no code blocks, no explanations.
+Expected format: ["Plant1", "Plant2", "Plant3"]
+
+Rules:
+- No markdown code blocks (no ```)
+- No explanations or additional text
+- Just the raw JSON object
+- The key must be exactly "plant_list"
+- Values must be plant names as strings
+

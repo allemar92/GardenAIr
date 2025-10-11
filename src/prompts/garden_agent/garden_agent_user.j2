@@ -1,0 +1,22 @@
+Based on the following list of plants: {{ plants_and_synergy | join(", ") }}
+Number of people to feed: {{ num_people }}
+
+Provide detailed gardening instructions that include:
+- Garden layout with companion planting arrangements
+- Which plants should be planted close together and why
+- How to maximize synergies between plants
+- Recommended quantities per species for a family of {{ num_people }}
+- Planting schedule and spacing requirements
+- Basic care and maintenance tips
+
+IMPORTANT: Respond with ONLY valid JSON in this exact format:
+{
+  "gardening_instruction": "Your complete instructions here. Use clear sections. Keep it practical and concise."
+}
+
+Rules:
+- No markdown code blocks (no ```)
+- No explanations outside the JSON
+- Just the raw JSON object
+- The key must be exactly "gardening_instruction"
+- Write instructions as a single formatted string (you can use \n for line breaks if needed)

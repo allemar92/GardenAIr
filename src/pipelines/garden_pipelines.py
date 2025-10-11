@@ -4,6 +4,12 @@ from agents.create_agents import(
     create_garden_agent,
     create_summarize_map_agent
 )
+from data_models.plant_selector_model import PlantSelectorInput, PlantSelectorOutput
+from data_models.synergy_agent_model import SynergyAgentInput, SynergyAgentOutput
+from data_models.garden_agent_model import GardenAgentInput, GardenAgentOutput
+from data_models.map_summarizer_model import SummarizeMapAgentInput, SummarizeMapAgentOutput
+from utils.prompt_loader import PromptLoader
+from utils.parse_agent_output import parse_agent_output
 from images.openai_image_client import OpenAIImageClient
 # import logging
 # logger = logging.getLogger(__name__)
@@ -18,76 +24,122 @@ from images.openai_image_client import OpenAIImageClient
 def run_garden_pipeline(location: str, preferences: list[str], num_people: int, client):
     """
     Runs the gardening pipeline
+
     """
-    #first agents: it will suggest the plant list
+    prompt_loader = PromptLoader(base_context={"name": "PlantSelector"})
+
+    input_data = PlantSelectorInput(location=location,
+                                    preferences=preferences,
+                                    num_people=num_people)
+    
+    system_prompt = prompt_loader.render("plant_selector/plant_selector_system.j2", {})
+    user_prompt = prompt_loader.render("plant_selector/plant_selector_user.j2", input_data.model_dump())
+
+    full_prompt = f"{system_prompt}\n{user_prompt}"
+
     plant_selector = create_plant_selector() 
-    plant_list = plant_selector.ask(
-        f"""I live in {location}, and I like {', '.join(preferences)}.
-            I want to make a synergistic garden. 
-            Add to my preference the most useful and productive garden plants that thrive in my climate zone.
-            Suggest a list of plants that do well in my area and that have nice synergies.
-            Avoid any tips or advice, generate only a list of plants. Avoid any explanations or introduction.""",
-                                    client=client)
-    if not plant_list or plant_list.startswith("Error:"):
-        raise RuntimeError("Plant selector failed to generate output")
+    raw_response = plant_selector.ask(full_prompt, client=client, model=plant_selector.model)
+
+    try:
+        if isinstance(raw_response, PlantSelectorOutput):
+            plant_list = raw_response
+        elif isinstance(raw_response, str):
+            plant_list = parse_agent_output(raw_response, PlantSelectorOutput)
+        else:
+            plant_list = PlantSelectorOutput(**raw_response)
+        print(f"🌱 Plant list generated: {plant_list.plant_list}") 
+
+    except ValueError as e:
+        print(f"Plant selection failed: {e}")
+        raise RuntimeError("Plant selector failed to generate valid output")
 
 
-    print("🌱 Plant list generated: ",plant_list)
+    prompt_loader = PromptLoader(base_context={"name": "SynergyAgent"})
 
-    #second agent: it will suggest the synergies
-    synergy_agent  =create_synergy_agent()
-    plants_and_synergy = synergy_agent.ask(
-    f"""Based on this list of plant: {plant_list}, provide any additional synergetic plant that thrives in this location: {location}
-        Return the provided list with the addition of the new plants.
-        Avoid any tips or advice, generate only a list of plants. Avoid any explanations or introduction.""",
-                                    client=client
-                        )
-    
-    if not plants_and_synergy or plants_and_synergy.startswith("Error:"):
-        raise RuntimeError("Plant selector failed to generate output")
-    
-    print(f"🌱 Synergy step complete. Plants: {plants_and_synergy}")
+    input_data = SynergyAgentInput(plant_list=plant_list.plant_list, location=location)
 
-    #third agent: it will provide the gardening instructions
+    system_prompt = prompt_loader.render("synergy_agent/synergy_agent_system.j2", {})
+    user_prompt = prompt_loader.render("synergy_agent/synergy_agent_user.j2", input_data.model_dump())
+
+    full_prompt = f"{system_prompt}\n{user_prompt}"
+
+    synergy_agent  = create_synergy_agent()
+
+    raw_response = synergy_agent.ask(full_prompt, client=client, model=synergy_agent.model)
+
+    try:
+        if isinstance(raw_response, SynergyAgentOutput):
+            plants_and_synergy = raw_response
+        elif isinstance(raw_response, str):
+            plants_and_synergy = parse_agent_output(raw_response, SynergyAgentOutput)
+        else:
+            plants_and_synergy = SynergyAgentOutput(**raw_response)
+
+        print(f"🌱 Synergy step complete. Plants: {plants_and_synergy.plants_and_synergy}")
+
+    except ValueError as e:
+        print(f"Synergy step failed: {e}")
+        raise RuntimeError("Synergy agent failed to generate valid output")
+
+
+    prompt_loader = PromptLoader(base_context={"name": "GardenAgent"})
+
+    input_data = GardenAgentInput(plants_and_synergy=plants_and_synergy.plants_and_synergy, num_people=num_people)
+
+    system_prompt = prompt_loader.render("garden_agent/garden_agent_system.j2", {})
+    user_prompt = prompt_loader.render("garden_agent/garden_agent_user.j2", input_data.model_dump())
+
+    full_prompt = f"{system_prompt}\n{user_prompt}"
+
     garden_agent = create_garden_agent()
-    gardening_instruction =garden_agent.ask(
-        f"""Based on this list of plant: {plants_and_synergy}, provide instructions to set the garden to take full advantage of the synergies between plants
-            Provide precise instructions on which plants should be planted close to each other and on the synergies to take advantage of.
-            Give the right number of plants for each species to feed a family of {num_people}""",
-                                    client=client
-                    )
-    if not gardening_instruction or gardening_instruction.startswith("Error:"):
-        raise RuntimeError("Plant selector failed to generate output")
-    
-    print(f"🌱 Gardening instructions generated: {gardening_instruction}")
-    #fourth agent: it will summarize the map
-    summarize_map_agent = create_summarize_map_agent()
-    summarized_map = summarize_map_agent.ask(
-            f"""
-            You are a garden layout summarizer.
-            Based on the following plant list: {plants_and_synergy}
-            and these gardening instructions: {gardening_instruction},
-            produce a concise, structured garden map.
+    raw_response = garden_agent.ask(full_prompt, client=client, model=garden_agent.model)
 
-            Rules:
-            - Output ONLY a minimal description of the layout.
-            - Indicate clearly which plants should be grouped together.
-            - Do NOT include advice, explanations, or extra text.
-            - Use a simple format like: 
-            Bed 1: carrots next to onions and lettuce.
-            Bed 2: tomatoes next to basil and marigold.
-            """,
-                                    client=client
-            )
-    if not summarized_map or summarized_map.startswith("Error:"):
-        raise RuntimeError("Plant selector failed to generate output")
-    print(f"🌱 Gardening's layout summarized: {summarized_map}")
+    try:
+        if isinstance(raw_response, GardenAgentOutput):
+            gardening_instruction = raw_response
+        elif isinstance(raw_response, str):
+            gardening_instruction = parse_agent_output(raw_response, GardenAgentOutput)
+        else:
+            gardening_instruction = GardenAgentOutput(**raw_response)
+
+        print(f"🌱 Gardening instructions generated: {gardening_instruction.gardening_instruction}")
+
+    except ValueError as e:
+        print(f"Garden agent step failed: {e}")
+        raise RuntimeError("Garden agent failed to generate valid output")
+    
+    prompt_loader = PromptLoader(base_context={"name": "SummarizeMapAgent"})
+
+    input_data = SummarizeMapAgentInput(plants_and_synergy=plants_and_synergy.plants_and_synergy, gardening_instruction=gardening_instruction.gardening_instruction)
+
+    system_prompt = prompt_loader.render("summarize_map_agent/summarize_map_system.j2", {})
+    user_prompt = prompt_loader.render("summarize_map_agent/summarize_map_user.j2", input_data.model_dump())
+
+    full_prompt = f"{system_prompt}\n{user_prompt}"
+
+    summarize_map_agent = create_summarize_map_agent()
+    raw_response = summarize_map_agent.ask(full_prompt, client=client, model=summarize_map_agent.model)
+
+    try:
+        if isinstance(raw_response, SummarizeMapAgentOutput):
+            summarized_map = raw_response
+        elif isinstance(raw_response, str):
+            summarized_map = parse_agent_output(raw_response, SummarizeMapAgentOutput)
+        else:
+            summarized_map = SummarizeMapAgentOutput(**raw_response)
+
+        print(f"🌱 Gardening's layout summarized: {summarized_map.summarized_map}")
+
+    except ValueError as e:
+        print(f"Map summarization step failed: {e}")
+        raise RuntimeError("Map summarizer agent failed to generate valid output")
+
     #generate an image of the garden
     try:
         image_client = OpenAIImageClient()
         garden_image = image_client.generate_image(f"""
             Based on this layout description:
-            {summarized_map}
+            {summarized_map.summarized_map}
 
             Generate a minimal black-and-white outline schema, similar to diagrams in textbooks.
 
@@ -95,7 +147,7 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int, 
             - Draw only plants, one per species.
             - Do not add text, labels, or explanations.
             - Keep the style clean, simple, and schematic.
-        """,  size="1024x1024")#n=1,
+        """,  size="1024x1024")
 
         print("DEBUG - garden_image response:", garden_image)
 
@@ -108,12 +160,11 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int, 
         print(f"❌ Failed to generate garden image: {e}")
         garden_image = None  
 
-    
     return {
-    "plant_list": plant_list,
-    "plants_and_synergy": plants_and_synergy,
-    "gardening_instruction": gardening_instruction,
-    "summarized_map": summarized_map,
-    "garden_image": garden_image
-}
+        "plant_list": plant_list.plant_list,
+        "plants_and_synergy": plants_and_synergy.plants_and_synergy,
+        "gardening_instruction": gardening_instruction.gardening_instruction,
+        "summarized_map": summarized_map.summarized_map,
+        "garden_image": garden_image
+    }
 

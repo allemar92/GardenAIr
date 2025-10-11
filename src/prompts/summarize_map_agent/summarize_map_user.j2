@@ -1,0 +1,19 @@
+Plant list: {{ plants_and_synergy | join(", ") }}
+
+Gardening instructions:
+{{ gardening_instruction }}
+
+Create a concise, structured summary of the garden layout showing which plants are grouped together.
+
+IMPORTANT: Respond with ONLY valid JSON in this exact format:
+{
+  "summarized_map": "Section A: Tomatoes, Basil, Marigold (companions)\nSection B: Lettuce, Spinach\nSection C: Peppers, Oregano\nSection D: Carrots, Onions, Garlic"
+}
+
+Rules:
+- No markdown code blocks (no ```)
+- No explanations
+- Just the raw JSON object
+- The key must be exactly "summarized_map"
+- Use \n for line breaks between sections
+- Format: "Section X: Plant1, Plant2, Plant3 (relationship)"

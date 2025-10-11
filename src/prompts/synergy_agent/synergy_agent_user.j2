@@ -1,0 +1,19 @@
+Based on this plant list: {{ plant_list | join(", ") }}
+Location: {{ location }}
+
+Task:
+1. Analyze synergistic relationships between these plants
+2. Add 2-4 companion plants that would benefit this garden
+3. Return the complete plant list (original plants + new companions)
+
+IMPORTANT: Respond with ONLY valid JSON in this exact format:
+{
+  "plants_and_synergy": ["Plant1", "Plant2", "Plant3", "Plant4"]
+}
+
+Rules:
+- No markdown code blocks (no ```)
+- No explanations or additional text
+- Just the raw JSON object
+- The key must be exactly "plants_and_synergy"
+- Plant names should be capitalized (e.g., "Tomato", "Basil")
