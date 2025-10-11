@@ -15,7 +15,9 @@ def create_plant_selector():
         name="PlantSelector",
         model="gpt-4o-mini",
         role="a helpful gardening assistant specialized in synergistic gardening.",
-        max_tokens=800
+        max_tokens=800,
+        input_model=PlantSelectorInput,
+        output_model=PlantSelectorOutput
     )
 
 def create_synergy_agent():
@@ -26,7 +28,9 @@ def create_synergy_agent():
         name="SynergyAgent",
         model="gpt-4o-mini",
         role="a helpful gardening assistant specialized in synergistic gardening.",
-        max_tokens=1500
+        max_tokens=1500,
+        input_model=SynergyAgentInput,
+        output_model=SynergyAgentOutput
     )
 
 def create_garden_agent():
@@ -37,7 +41,9 @@ def create_garden_agent():
         name="GardenAgent",
         model="gpt-4o-mini",
         role="a helpful gardening assistant specialized in synergistic gardening.",
-        max_tokens=3000
+        max_tokens=3000,
+        input_model=GardenAgentInput,
+        output_model=GardenAgentOutput
     )
 
 def create_summarize_map_agent():
@@ -48,5 +54,7 @@ def create_summarize_map_agent():
         name="SummarizeMapAgent",
         model="gpt-4o-mini",
         role="a helpful gardening assistant specialized in synergistic gardening.",
-        max_tokens=1000
+        max_tokens=1000,
+        input_model=SummarizeMapAgentInput,
+        output_model=SummarizeMapAgentOutput
     )

@@ -1,5 +1,5 @@
 from typing import Optional
-from typing import Union
+from typing import Union, Optional, Type
 from pydantic import BaseModel
 from clients.litellm_client import LiteLLMClient
 
@@ -15,11 +15,19 @@ class Agent:
     A generic agent that interacts with an LLM.
     Can be customized for different domains and personalities.
     """
-    def __init__(self, name="GenericAgent", model="default-model", role="helpful assistant",
-                  temperature: float = 0.2, max_tokens: int = 1024):
+    def __init__(self, 
+                name: str ="GenericAgent", 
+                model: str ="default-model",
+                role: str ="helpful assistant",
+                temperature: float = 0.2,
+                max_tokens: int = 1024,
+                input_model: Optional[Type[BaseModel]] = None,
+                output_model: Optional[Type[BaseModel]] = None):
         self.name = name
         self.model = model
         self.role = role
+        self.input_model= input_model
+        self.output_model= output_model
         self.client = get_client(model=self.model, temperature=temperature, max_tokens=max_tokens)
 
     def ask(self, prompt: Union[str, BaseModel], client: Optional[object] = None, model: Optional[str] = None) -> str:
@@ -29,16 +37,26 @@ class Agent:
         model_to_use = model or self.model
 
         if isinstance(prompt, BaseModel):
-                    prompt = prompt.model_dump_json(indent=2)
+                    prompt_text = prompt.model_dump_json(indent=2)
+        else:
+            prompt_text=prompt
 
         try:
             response = client.chat.completions.create(
                 model=model_to_use,
                 messages=[
                     {"role": "system", "content": f"You are {self.name}, {self.role}."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt_text}
                 ]
             )
-            return response.choices[0].message.content
+            content = response.choices[0].message.content.strip()
+
+            if self.output_model:
+                try:
+                    return self.output_model.model_validate_json(content)
+                except Exception as e:
+                    return f"Error parsing output to {self.output_model.__name__}: {e}"
+            return content
+        
         except Exception as e:
             return f"Error: {e}"
