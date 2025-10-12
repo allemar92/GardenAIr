@@ -1,47 +1,65 @@
 import os
-from .base_client import BaseClient
 from dotenv import load_dotenv
-#from litellm import LLMClient  
+from litellm import completion
 
 load_dotenv()
 
-class LiteLLMClient(BaseClient):
+class LiteLLMClient:
+    """
+    Wrapper for LiteLLM, compatible with the agent.
+    Allows sending messages in OpenAI chat style.
+    """
     def __init__(self, model: str = None, temperature: float = 0.2, max_tokens: int = 1024):
-        """
-        model: model name, e.g. "gpt-4o-mini"
-        temperature: temperature to set
-        max_tokens: max number of tokens allowed on the answer
-        """
         self.model = model or os.getenv("LITELLM_MODEL", "gpt-4o-mini")
         self.temperature = temperature
         self.max_tokens = max_tokens
-
-    def get_client(self, model: str = None, temperature: float = None, max_tokens: int = None):
-        """
-        Returns the LiteLLM client with the specified parameters.
-        """
-        final_model = model or self.model
-        final_temp = temperature if temperature is not None else self.temperature
-        final_max_tokens = max_tokens if max_tokens is not None else self.max_tokens
-
-        return LiteLLMClient(
-            model=final_model,
-            temperature=final_temp,
-            max_tokens=final_max_tokens
-        )
-
+        # Initialize the chat interface to match OpenAI structure
+        self.chat = self._Chat(self)
     
-#esempi di uso
-# client_wrapper = LiteLLMClient()
-# client = client_wrapper.get_client()
-# gardening_client = LiteLLMClient().get_client(
-#     model="huggingface/falcon-7b-instruct",
-#     temperature=0.5,
-#     max_tokens=300
-# )
-
-# planning_client = LiteLLMClient().get_client(
-#     model="gpt-4o-mini",
-#     temperature=0.8,
-#     max_tokens=800
-# )
+    class _Chat:
+        """
+        Chat interface to match OpenAI's client.chat structure.
+        """
+        def __init__(self, parent):
+            self.parent = parent
+            self.completions = self._Completions(parent)
+        
+        class _Completions:
+            """
+            Completions interface to match OpenAI's client.chat.completions structure.
+            """
+            def __init__(self, parent):
+                self.parent = parent
+            
+            def create(self, model=None, messages=None, temperature=None, max_tokens=None, 
+                      response_format=None, **kwargs):
+                """
+                Creates a completion using LiteLLM, matching OpenAI's API signature.
+                """
+                try:
+                    # Prepare parameters
+                    params = {
+                        "model": model or self.parent.model,
+                        "messages": messages,
+                        "temperature": temperature if temperature is not None else self.parent.temperature,
+                        "max_tokens": max_tokens or self.parent.max_tokens,
+                    }
+                    
+                    # Add response_format if provided (for JSON mode)
+                    if response_format:
+                        params["response_format"] = response_format
+                    
+                    # Add any additional kwargs
+                    params.update(kwargs)
+                    
+                    response = completion(**params)
+                    return response
+                except Exception as e:
+                    raise RuntimeError(f"LiteLLM completion error: {e}")
+    
+    def get_client(self):
+        """
+        Returns the instance itself, for compatibility with the pipeline.
+        """
+        return self
+    
