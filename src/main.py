@@ -1,8 +1,9 @@
 
 import typer
 from typing import List
-from clients.openai_client import OpenAIClient
-from pipelines.garden_pipelines import run_garden_pipeline
+#from clients.openai_client import OpenAIClient
+from clients.litellm_client import LiteLLMClient
+from pipelines.garden_pipeline import run_garden_pipeline
 
 
 
@@ -19,7 +20,8 @@ def run_garden_pipeline_cli(
     """
 
     typer.echo("🌱 Starting the Synergistic Garden pipeline")
-    client: OpenAIClient = OpenAIClient().get_client()
+    #client: OpenAIClient = OpenAIClient().get_client()
+    client: LiteLLMClient = LiteLLMClient().get_client()
     result = run_garden_pipeline(location, preferences, num_people, client=client)
 
     typer.echo("\n✅ Pipeline succesfully completed!\n")
