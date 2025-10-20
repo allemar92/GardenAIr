@@ -1,7 +1,11 @@
-from typing import Optional
+import logging
+from utils.logging_config import setup_logger
 from typing import Union, Optional, Type
 from pydantic import BaseModel
 from clients.litellm_client import LiteLLMClient
+
+logger = setup_logger("agent")
+
 
 def get_client(model: str = "gpt-4o-mini", temperature: float = 0.2, max_tokens: int = 1024):
     """
@@ -29,6 +33,7 @@ class Agent:
         self.input_model= input_model
         self.output_model= output_model
         self.client = get_client(model=self.model, temperature=temperature, max_tokens=max_tokens)
+        logger.info(f"Initialized agent '{self.name}' with model '{self.model}', role='{self.role}'")
 
     def ask(self, prompt: Union[str, BaseModel], client: Optional[object] = None, model: Optional[str] = None) -> str:
         if client is None:
@@ -41,6 +46,8 @@ class Agent:
         else:
             prompt_text=prompt
 
+        logger.info(f"Agent '{self.name}' asking with model '{model_to_use}'")
+        logger.debug(f"Prompt (first 300 chars): {prompt_text[:300]!r}")
         try:
             response = client.chat.completions.create(
                 model=model_to_use,
@@ -50,13 +57,18 @@ class Agent:
                 ]
             )
             content = response.choices[0].message.content.strip()
-
+            logger.info(f"{self.name}: Received response from model")
+            logger.debug(f"Raw response: {content[:300]}...")
             if self.output_model:
+                logger.info(f"{self.name}: Parsing response into {self.output_model.__name__}")
                 try:
                     return self.output_model.model_validate_json(content)
                 except Exception as e:
+                    logger.error(f"❌ {self.name}: Failed to parse response: {e}", exc_info=True)
                     return f"Error parsing output to {self.output_model.__name__}: {e}"
+                    
             return content
         
         except Exception as e:
+            logger.error(f"{self.name}: Request failed with error: {e}", exc_info=True)
             return f"Error: {e}"
