@@ -2,12 +2,15 @@
 
 import json
 import re
-from typing import TypeVar, Type
+import logging
+from typing import TypeVar, Type, Union
 from pydantic import BaseModel, ValidationError
+from utils.logging_config import setup_logger
 
 T = TypeVar('T', bound=BaseModel)
+logger=setup_logger("parse_agent_output")
 
-def parse_agent_output(raw_output: str, model_class: Type[T]) -> T:
+def parse_agent_output(raw_output: Union[str, BaseModel], model_class: Type[T]) -> T:
     """
     Parse LLM output into a Pydantic model, handling common formatting issues.
     
@@ -50,7 +53,12 @@ def parse_agent_output(raw_output: str, model_class: Type[T]) -> T:
     """
     
     # Step 1: Clean markdown code blocks and whitespace
-    cleaned = raw_output.strip()
+    if isinstance(raw_output, BaseModel):
+        logger.debug(f"Received Pydantic object ({type(raw_output).__name__}), converting to JSON string.")
+        cleaned = raw_output.model_dump_json(indent=2)
+    else:
+        cleaned = str(raw_output).strip()
+        logger.debug(f"Received string output ({len(cleaned)} chars).")
     
     # Remove ```json or ``` at the start
     cleaned = re.sub(r'^```(?:json)?\s*\n?', '', cleaned)
@@ -82,11 +90,13 @@ def parse_agent_output(raw_output: str, model_class: Type[T]) -> T:
     
     # Step 5: Attempt to parse with Pydantic
     try:
-        return model_class.model_validate_json(json_str)
-    
+        result = model_class.model_validate_json(json_str)
+        logger.info(f"✅ Parsed output successfully into {model_class.__name__}")
+        return result
+
     except ValidationError as e:
-        # Pydantic validation failed - field types don't match
         error_details = '\n'.join([f"  - {err['loc']}: {err['msg']}" for err in e.errors()])
+        logger.error(f"❌ Validation failed for {model_class.__name__}: {error_details}", exc_info=True)
         raise ValueError(
             f"Pydantic validation failed for {model_class.__name__}\n"
             f"Validation errors:\n{error_details}\n"
@@ -94,50 +104,34 @@ def parse_agent_output(raw_output: str, model_class: Type[T]) -> T:
         )
     
     except json.JSONDecodeError as e:
-        # Invalid JSON syntax
+        logger.error(f"❌ JSON decode error in {model_class.__name__}: {e}", exc_info=True)
         raise ValueError(
             f"Invalid JSON syntax for {model_class.__name__}\n"
             f"JSON decode error: {e.msg} at position {e.pos}\n"
             f"Extracted string (first 500 chars):\n{json_str[:500]}"
         )
-    
+
     except Exception as e:
-        # Any other unexpected error
+        logger.error(f"❌ Unexpected error in parse_agent_output: {e}", exc_info=True)
         raise ValueError(
             f"Unexpected error parsing output into {model_class.__name__}\n"
             f"Error type: {type(e).__name__}\n"
             f"Error message: {str(e)}\n"
-            f"Raw output (first 500 chars):\n{raw_output[:500]}\n"
+            f"Raw output (first 500 chars):\n{str(raw_output)[:500]}\n"
             f"Cleaned output (first 500 chars):\n{cleaned[:500]}"
         )
 
 
-def parse_agent_output_safe(raw_output: str, model_class: Type[T], 
+def parse_agent_output_safe(raw_output: Union[str, BaseModel], model_class: Type[T],
                             fallback_value=None) -> T:
     """
     Safe version of parse_agent_output that returns a fallback instead of raising.
-    
-    Useful when you want the pipeline to continue even if one agent fails.
-    
-    Args:
-        raw_output: Raw string output from the LLM
-        model_class: Pydantic model class to parse into
-        fallback_value: Optional fallback value if parsing fails
-        
-    Returns:
-        Validated Pydantic model instance or fallback
-        
-    Examples:
-        >>> result = parse_agent_output_safe(
-        ...     raw_output,
-        ...     PlantSelectorOutput,
-        ...     fallback_value=PlantSelectorOutput(plant_list=["tomato"])
-        ... )
     """
     try:
         return parse_agent_output(raw_output, model_class)
     except ValueError as e:
-        print(f" Warning: {e}")
+        logger.warning(f"⚠️ Parsing failed for {model_class.__name__}: {e}")
         if fallback_value is not None:
+            logger.info(f"Returning fallback value for {model_class.__name__}")
             return fallback_value
         raise
