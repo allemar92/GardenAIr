@@ -1,8 +1,8 @@
 import logging
-from utils.logging_config import setup_logger
+from src.utils.logging_config import setup_logger
 from typing import Union, Optional, Type
 from pydantic import BaseModel
-from clients.litellm_client import LiteLLMClient
+from src.clients.litellm_client import LiteLLMClient
 
 logger = setup_logger("agent")
 

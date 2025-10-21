@@ -5,7 +5,7 @@ import re
 import logging
 from typing import TypeVar, Type, Union
 from pydantic import BaseModel, ValidationError
-from utils.logging_config import setup_logger
+from src.utils.logging_config import setup_logger
 
 T = TypeVar('T', bound=BaseModel)
 logger=setup_logger("parse_agent_output")

@@ -1,9 +1,9 @@
 
-from agents.agent import Agent
-from data_models.plant_selector_model import PlantSelectorInput, PlantSelectorOutput
-from data_models.synergy_agent_model import SynergyAgentInput, SynergyAgentOutput
-from data_models.garden_agent_model import GardenAgentInput, GardenAgentOutput
-from data_models.map_summarizer_model import SummarizeMapAgentInput, SummarizeMapAgentOutput
+from src.agents.agent import Agent
+from src.data_models.plant_selector_model import PlantSelectorInput, PlantSelectorOutput
+from src.data_models.synergy_agent_model import SynergyAgentInput, SynergyAgentOutput
+from src.data_models.garden_agent_model import GardenAgentInput, GardenAgentOutput
+from src.data_models.map_summarizer_model import SummarizeMapAgentInput, SummarizeMapAgentOutput
 
 
 

@@ -3,7 +3,7 @@ import time
 import logging
 from dotenv import load_dotenv
 from litellm import completion
-from utils.logging_config import setup_logger
+from src.utils.logging_config import setup_logger
 
 load_dotenv()
 logger = setup_logger("litellm_client")
