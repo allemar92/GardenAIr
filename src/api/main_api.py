@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from pipelines.garden_pipeline import run_garden_pipeline
-from clients.litellm_client import LiteLLMClient
-from utils.logging_config import setup_logger
+from src.pipelines.garden_pipeline import run_garden_pipeline
+from src.clients.litellm_client import LiteLLMClient
+from src.utils.logging_config import setup_logger
 
 logger = setup_logger("main_api")
 
