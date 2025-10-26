@@ -14,7 +14,6 @@ class OpenAIImageClient(BaseImageClient):
         response = self.client.images.generate(
             model="dall-e-3",
             prompt=prompt,
-            #n=1,
-            size=size
+            size=size,
         )
         return response.data[0].url
