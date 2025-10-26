@@ -115,13 +115,16 @@ def run_garden_pipeline(location: str, preferences: list[str], num_people: int, 
     try:
         logger.info("🖼️ Step 5: Generating garden image")
 
-        image_client = OpenAIImageClient()
-        garden_image = image_client.generate_image(f"""
-            Based on this layout description:
-            {summarized_map.summarized_map}
+        prompt_loader = PromptLoader(base_context={"name": "ImageGeneration"})  
 
-            Generate a minimal black-and-white outline schema, similar to diagrams in textbooks.
-        """, size="1024x1024")
+        input_data = {
+            "summarized_map": summarized_map.summarized_map
+        }
+        
+        user_prompt = prompt_loader.render("image_generation/image_generation_user.j2", input_data)
+
+        image_client = OpenAIImageClient()
+        garden_image = image_client.generate_image(user_prompt, size="1024x1024")
 
         if not garden_image or not garden_image.startswith("http"):
             raise ValueError("Invalid image URL returned.")
